@@ -1,0 +1,43 @@
+{
+  "schemaVersion": 2,
+  "generatedAt": "2026-10-02T14:20:00Z",
+  "title": "Design System: 待辦清單",
+  "extensions": {
+    "motion": [
+      { "name": "item-enter", "value": "180ms cubic-bezier(0.2, 0.8, 0.2, 1)", "purpose": "新增待辦淡入並上移 4px；reduced-motion 時停用。" }
+    ],
+    "breakpoints": [
+      { "name": "title-compact", "value": "400px" },
+      { "name": "sm", "value": "640px" }
+    ]
+  },
+  "components": [
+    {
+      "name": "Primary Button",
+      "kind": "button",
+      "refersTo": "button-primary",
+      "description": "主要動作，例如新增待辦。",
+      "html": "<button class=\"ds-btn-primary\">新增</button>",
+      "css": ".ds-btn-primary { background: #0f766e; color: #fff; padding: 12px 20px; border: 0; border-radius: 0.75rem; font-weight: 600; font-family: 'Noto Sans TC', sans-serif; } .ds-btn-primary:hover { background: #0b5e57; } .ds-btn-primary:active { transform: scale(0.97); } .ds-btn-primary:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }"
+    },
+    {
+      "name": "Text Input",
+      "kind": "input",
+      "refersTo": "input-text",
+      "description": "新增待辦的輸入框。",
+      "html": "<input class=\"ds-input\" placeholder=\"例如：整理書桌\" />",
+      "css": ".ds-input { background: #fff; color: #19312d; border: 1px solid #d9e2df; border-radius: 0.75rem; padding: 12px 16px; font-family: 'Noto Sans TC', sans-serif; } .ds-input:focus-visible { outline: 3px solid #0f766e; outline-offset: 3px; }"
+    }
+  ],
+  "narrative": {
+    "northStar": "The Quiet Notebook",
+    "keyCharacteristics": ["單欄、寬度上限 560px、置中", "單一主色，灰階分三層", "平面、無陰影，以細線分隔", "一處微動效：新項目淡入"],
+    "rules": [
+      { "name": "The One Voice Rule", "body": "畫面上只有 Quiet Teal 一個強調色；新增的狀態優先用文字標籤與既有色票表達，不引入新的鮮豔色。", "section": "colors" },
+      { "name": "The Two-Step Rule", "body": "相鄰層級至少在大小或字重上差兩級。", "section": "typography" },
+      { "name": "The Flat Paper Rule", "body": "不加陰影；需要分隔時用細線或留白。", "section": "elevation" }
+    ],
+    "dos": ["Do 讓 Quiet Teal 只出現在主要動作、焦點與勾選框。", "Do 用文字標籤表達狀態（如「已逾期」），顏色只作輔助。", "Do 所有可互動元素都有清楚的 focus 外框（3px Quiet Teal）。"],
+    "donts": ["Don't 加陰影、漸層或卡片外框。", "Don't 引入第二個強調色。", "Don't 只靠顏色傳達狀態。"]
+  }
+}

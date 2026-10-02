@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>待辦清單</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+TC:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      :root {
+        --color-page: #f8faf9;
+        --color-surface: #ffffff;
+        --color-border: #d9e2df;
+        --color-text: #19312d;
+        --color-muted: #60736e;
+        --color-faint: #84938f;
+        --color-accent: #0f766e;
+        --color-accent-hover: #0b5e57;
+        --color-error: #b42318;
+        --font-body: 'Noto Sans TC', sans-serif;
+        --text-body: 1rem;
+        --text-title: 2rem;
+        --space-1: 0.5rem;
+        --space-2: 1rem;
+        --space-3: 1.5rem;
+        --space-4: 2rem;
+        --radius-control: 0.75rem;
+      }
+
+      body { background: var(--color-page); color: var(--color-text); font-family: var(--font-body); font-size: var(--text-body); }
+      .todo-input { border: 1px solid var(--color-border); border-radius: var(--radius-control); background: var(--color-surface); }
+      .todo-input:focus-visible, .add-button:focus-visible, .todo-check:focus-visible { outline: 3px solid var(--color-accent); outline-offset: 3px; }
+      .todo-input[aria-invalid="true"] { border-color: var(--color-error); }
+      .add-button { background: var(--color-accent); border-radius: var(--radius-control); color: white; }
+      .add-button:hover { background: var(--color-accent-hover); }
+      .add-button:active { transform: scale(0.97); }
+      .todo-check { accent-color: var(--color-accent); }
+      .todo-item { border-bottom: 1px solid var(--color-border); }
+      .todo-item:last-child { border-bottom: 0; }
+      .todo-item.is-complete .todo-text { color: var(--color-faint); text-decoration: line-through; }
+      .todo-meta { color: var(--color-muted); }
+      .todo-item.just-added { animation: item-enter 180ms cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+      @keyframes item-enter { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+      @media (prefers-reduced-motion: reduce) { .todo-item.just-added { animation: none; } }
+      @media (max-width: 400px) { :root { --text-title: 1.75rem; } }
+    </style>
+  </head>
+  <body class="min-h-screen">
+    <main class="mx-auto w-full max-w-[560px] px-5 pb-20 pt-16 sm:pt-24">
+      <header class="mb-10">
+        <p class="mb-3 text-sm font-semibold tracking-[0.12em]" style="color: var(--color-accent)">TODAY · 待辦事項</p>
+        <h1 class="font-bold tracking-tight" style="font-size: var(--text-title); line-height: 1.3">把事情記下來。</h1>
+        <p class="mt-3 leading-relaxed" style="color: var(--color-muted)">從一件小事開始，完成後替自己打個勾。</p>
+      </header>
+
+      <section aria-labelledby="list-heading">
+        <form id="todo-form" novalidate>
+          <label for="todo-input" class="mb-2 block text-sm font-semibold">新增待辦</label>
+          <div class="flex items-stretch gap-2">
+            <input id="todo-input" class="todo-input min-w-0 flex-1 px-4 py-3" type="text" autocomplete="off" aria-describedby="todo-error" placeholder="例如：整理書桌" />
+            <button class="add-button shrink-0 px-5 py-3 font-semibold" type="submit">新增</button>
+          </div>
+          <p id="todo-error" class="mt-2 text-sm" style="color: var(--color-error)" role="alert" hidden>請輸入待辦內容</p>
+          <label for="todo-due-date" class="mb-2 mt-5 block text-sm font-semibold">期限（選填）</label>
+          <input id="todo-due-date" class="todo-input w-full px-4 py-3 sm:w-auto" type="date" />
+        </form>
+
+        <div class="mt-12 flex items-end justify-between border-b pb-3" style="border-color: var(--color-border)">
+          <h2 id="list-heading" class="text-lg font-bold">我的待辦</h2>
+        </div>
+        <p id="empty-state" class="py-10 text-center" style="color: var(--color-muted)">還沒有待辦</p>
+        <ul id="todo-list" class="list-none p-0" aria-label="待辦清單"></ul>
+      </section>
+    </main>
+
+    <script type="module">
+      import { addTodo, formatDueDate, isTodoOverdue, toggleTodo } from './todo.js';
+
+      const form = document.querySelector('#todo-form');
+      const input = document.querySelector('#todo-input');
+      const dueInput = document.querySelector('#todo-due-date');
+      const error = document.querySelector('#todo-error');
+      const emptyState = document.querySelector('#empty-state');
+      const todoList = document.querySelector('#todo-list');
+      let todos = [];
+
+      function localToday() {
+        const now = new Date();
+        return [now.getFullYear(), String(now.getMonth() + 1).padStart(2, '0'), String(now.getDate()).padStart(2, '0')].join('-');
+      }
+
+      function showError(visible) {
+        error.hidden = !visible;
+        input.setAttribute('aria-invalid', String(visible));
+      }
+
+      function createItem(todo) {
+        const item = document.createElement('li');
+        item.className = 'todo-item just-added py-4';
+
+        const label = document.createElement('label');
+        label.className = 'flex cursor-pointer items-start gap-4 leading-relaxed';
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.className = 'todo-check mt-1 h-5 w-5 shrink-0 cursor-pointer';
+        checkbox.checked = todo.completed;
+        const content = document.createElement('span');
+        content.className = 'min-w-0 break-words';
+        const text = document.createElement('span');
+        text.className = 'todo-text block';
+        text.textContent = todo.text;
+        content.append(text);
+        let overdue;
+        if (todo.dueDate) {
+          const meta = document.createElement('span');
+          meta.className = 'todo-meta block text-sm';
+          const due = document.createElement('span');
+          due.textContent = formatDueDate(todo.dueDate);
+          overdue = document.createElement('span');
+          overdue.className = 'ml-2 font-semibold';
+          overdue.textContent = '已逾期';
+          overdue.hidden = !isTodoOverdue(todo, localToday());
+          meta.append(due, overdue);
+          content.append(meta);
+        }
+        label.append(checkbox, content);
+        item.append(label);
+
+        checkbox.addEventListener('change', () => {
+          todos = toggleTodo(todos, todo.id);
+          const updated = todos.find((entry) => entry.id === todo.id);
+          item.classList.toggle('is-complete', updated.completed);
+          if (overdue) overdue.hidden = !isTodoOverdue(updated, localToday());
+        });
+
+        return item;
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+        try {
+          todos = addTodo(todos, input.value, dueInput.value);
+          const todo = todos.at(-1);
+          todoList.append(createItem(todo));
+          emptyState.hidden = true;
+          input.value = '';
+          dueInput.value = '';
+          showError(false);
+        } catch (caught) {
+          if (caught.message !== 'EMPTY_TEXT') throw caught;
+          showError(true);
+        }
+      });
+    </script>
+  </body>
+</html>
