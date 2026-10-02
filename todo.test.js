@@ -64,6 +64,7 @@ function setupPage({ text = '鍵盤新增', dueDate = '', now = '2025-10-15T12:0
   const makeElement = () => {
     const element = {
       className: '',
+      style: {},
       append: function (...children) { this.children.push(...children); },
       addEventListener: function (name, listener) { this.listeners[name] = listener; },
       children: [],
@@ -151,4 +152,17 @@ test('an overdue label follows the checkbox state', () => {
   assert.equal(overdue.hidden, true);
   checkbox.listeners.change();
   assert.equal(overdue.hidden, false);
+});
+
+test('an overdue label uses Forest Ink while the due date remains secondary', () => {
+  const { form, todoList } = setupPage({ dueDate: '2025-10-14' });
+  form.listeners.submit({ preventDefault() {} });
+
+  const meta = todoList.children[0].children[0].children[1].children[1];
+  const due = meta.children[0];
+  const overdue = meta.children[1];
+  assert.equal(meta.classList.contains('todo-meta'), true);
+  assert.equal(due.style.color, undefined);
+  assert.equal(overdue.style.color, 'var(--color-text)');
+  assert.equal(overdue.classList.contains('font-semibold'), true);
 });
