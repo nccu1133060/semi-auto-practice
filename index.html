@@ -120,6 +120,7 @@
           due.textContent = formatDueDate(todo.dueDate);
           overdue = document.createElement('span');
           overdue.className = 'ml-2 font-semibold';
+          overdue.style.color = 'var(--color-text)';
           overdue.textContent = '已逾期';
           overdue.hidden = !isTodoOverdue(todo, localToday());
           meta.append(due, overdue);
